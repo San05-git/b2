@@ -1,25 +1,35 @@
 pipeline {
-  agent any
+    agent any
 
-  stages {
-
-    stage('Build') {
-      steps {
-        bat 'docker build -t sannidhi005/myapp2:v1 .'
-      }
+    environment {
+        DOCKER_IMAGE = 'sannidhi005/myapp2:v1'
     }
 
-    stage('Login') {
-      steps {
-        bat 'docker login -u sannidhi005 -p YOUR_PASSWORD'
-      }
-    }
+    stages {
 
-    stage('Push') {
-      steps {
-        bat 'docker push sannidhi005/myapp2:v1'
-      }
-    }
+        stage('Build Docker Image') {
+            steps {
+                bat 'docker build -t %DOCKER_IMAGE% .'
+            }
+        }
 
-  }
+        stage('Login to DockerHub') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-cred',
+                    usernameVariable: 'USER',
+                    passwordVariable: 'PASS'
+                )]) {
+                    bat 'echo %PASS% | docker login -u %USER% --password-stdin'
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                bat 'docker push %DOCKER_IMAGE%'
+            }
+        }
+
+    }
 }
